@@ -53,7 +53,7 @@ func ParseDate(date string) (string, error) {
 		date = time.Now().Add(-8.64e+13).Format("02/01/2006")
 	default:
 		// Check if date is valid
-		_, err := time.Parse("02/01/2006", date)
+		_, err := time.Parse("2/1/2006", date)
 		return date, err
 	}
 	return date, nil
@@ -90,16 +90,16 @@ func (g Goal) String() string {
 	if len(g.Progress) > 0 {
 		// If goals has at least 1 progress, print goal and its progresses
 		var builder strings.Builder
-		builder.WriteString(fmt.Sprintf("%-20s\t%-15s\t%-10s \n", g.Name, g.Note, g.Date))
+		builder.WriteString(fmt.Sprintf("%-20s\t%-10s\t%s \n", g.Name, g.Date, g.Note))
 		// write progresses
 		for _, v := range g.Progress {
 			builder.WriteString("\t" + v.String() + "\n")
 		}
 		return builder.String()
 	}
-	return fmt.Sprintf("%-20s\t%-15s\t%-10s \n", g.Name, g.Note, g.Date)
+	return fmt.Sprintf("%-20s\t%-10s\t%s \n", g.Name, g.Date, g.Note)
 }
 
 func (p Progress) String() string {
-	return fmt.Sprintf("[%d%%]\t%-20s\t%-10s", p.Value, p.Note, p.Date)
+	return fmt.Sprintf("[%d%%]\t%-10s\t%s", p.Value, p.Date, p.Note)
 }
