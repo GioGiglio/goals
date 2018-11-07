@@ -52,7 +52,7 @@ func main() {
 		fmt.Println(v)
 	}
 
-	editGoal(promptSelectGoal(nil))
+	promptEditGoal(promptSelectGoal(nil))
 	return
 
 	/*
@@ -78,11 +78,17 @@ func checkErr(err error) {
 	}
 }
 
-func promptSelectGoal(matches *[]models.Goal) *models.Goal {
+func promptSelectGoal(src *[]models.Goal) *models.Goal {
+	var source *[]models.Goal
+	if src != nil {
+		source = src
+	} else {
+		source = goals
+	}
 	goal := ""
 	options := make([]string, 0, len(goal))
 
-	for _, v := range *goals {
+	for _, v := range *source {
 		options = append(options, v.Name)
 	}
 
@@ -95,7 +101,7 @@ func promptSelectGoal(matches *[]models.Goal) *models.Goal {
 	return getGoal(goal)
 }
 
-func editGoal(goal *models.Goal) {
+func promptEditGoal(goal *models.Goal) {
 	qs := []*survey.Question{
 		{
 			Name: "name",
@@ -148,7 +154,8 @@ func editGoal(goal *models.Goal) {
 		panic(err)
 	}
 
-	goal.Name, goal.Date, goal.Note = ans.Name, ans.Date, ans.Note
+	goal.Name, goal.Note = ans.Name, ans.Note
+	goal.Date, _ = models.ParseDate(ans.Date)
 
 	fmt.Println(goal)
 }
