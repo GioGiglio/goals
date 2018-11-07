@@ -133,6 +133,28 @@ func UpdateGoalNoProgress(g *models.Goal) error {
 	return nil
 }
 
+// UpdateProgress Updates progress info into the database
+func UpdateProgress(p *models.Progress) error {
+	// check if there's a connection to the database
+	if db == nil {
+		return errors.New("No active connection to database")
+	}
+
+	// prepare statement
+	stmt, err := db.Prepare("UPDATE progress SET value = ?, date = ?, note = ? WHERE id = ?")
+	if err != nil {
+		return err
+	}
+
+	// exec statement
+	_, err = stmt.Exec(p.Value, p.Date, p.Note, p.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // FetchGoals fetches goals from local database
 func FetchGoals() (*[]models.Goal, error) {
 	// check if there's a connection to the database
@@ -247,9 +269,10 @@ func FetchGoalsAndProgress() (*[]models.Goal, error) {
 		lastGoalID = goalID
 		lastGoal = &goal
 	}
-	// push the last goal to goals
-	goals = append(goals, (*lastGoal))
-
+	if lastGoal != nil {
+		// push the last goal to goals
+		goals = append(goals, (*lastGoal))
+	}
 	return &goals, nil
 }
 
