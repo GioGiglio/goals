@@ -5,10 +5,9 @@ package main
 import (
 	"GOals/db"
 	"GOals/models"
-	"bufio"
 	"errors"
+	"flag"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/AlecAivazis/survey"
@@ -18,65 +17,110 @@ import (
 var goals *[]models.Goal
 
 func init() {
-	// parse command line arguments
-	/*
-		parser := argparse.NewParser("GOals", "Personal goals register and tracker")
-
-		s := parser.List("a", "add", nil)
-
-		err := parser.Parse(os.Args)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, parser.Usage(err))
-		}
-
-		fmt.Println(*s)
-		os.Exit(0)
-	*/
-
-}
-
-func main() {
 	// connect to local database
 	err := db.Connect()
 	checkErr(err)
 
-	// disconnect from database on exit
-	defer db.Disconnect()
-
 	// fetch goals
 	goals, err = db.FetchGoalsAndProgress()
 	checkErr(err)
-	//fmt.Println((*goals))
+}
 
-	for _, v := range *goals {
-		fmt.Println(v)
+func main() {
+	// disconnect from database on exit
+	defer db.Disconnect()
+
+	var flagNew string
+	var flagEdit string
+
+	flag.StringVar(&flagNew, "new", "", "Add a new [goal | progress]")
+	flag.StringVar(&flagEdit, "edit", "", "Edit an existing [goal | progress]")
+	flag.Parse()
+
+	if flagNew != "" {
+		switch flagNew {
+		case "goal":
+			onAddGoal()
+		case "progress":
+			onAddProgress()
+		default:
+			flag.Usage()
+		}
 	}
 
-	goal := promptEditGoal(promptSelectGoal(nil))
-	db.UpdateGoalNoProgress(goal)
-	return
-
-	/*
-		goal := createGoal(promptGoal())
-		goal.AddProgress(createProgress(promptProgress()))
-		goal.AddProgress(createProgress(promptProgress()))
-		db.InsertGoal(goal)
-	*/
-
-	/*
-		goal := (*goals)[len((*goals))-1]
-		goal.AddProgress(createProgress(promptProgress()))
-
-		db.InsertProgress(&goal.Progress[len(goal.Progress)-1], &goal)
-
-		fmt.Println(goal)
-	*/
+	if flagEdit != "" {
+		switch flagEdit {
+		case "goal":
+			onEditGoal()
+		case "progress":
+			fmt.Println("-- not implemented :(")
+		default:
+			flag.Usage()
+		}
+	}
 }
 
 func checkErr(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func onAddGoal() {
+	goal := createGoal(promptGoal())
+
+	shouldAddProgress := false
+	prompt := &survey.Confirm{
+		Message: "Add progress?",
+	}
+	survey.AskOne(prompt, &shouldAddProgress, nil)
+
+	if shouldAddProgress {
+		goal.AddProgress(createProgress(promptProgress()))
+	}
+	err := db.InsertGoal(goal)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("-- goal added")
+}
+
+func onAddProgress() {
+	goal := promptSelectGoal(nil)
+	progress := createProgress(promptProgress())
+	goal.AddProgress(progress)
+	err := db.InsertProgress(progress, goal)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("-- progress added")
+}
+
+func onShowGoals() {
+	goals, err := db.FetchGoalsAndProgress()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	if len((*goals)) == 0 {
+		fmt.Println("-- no goals")
+		return
+	}
+
+	for i := range *goals {
+		fmt.Println((*goals)[i])
+	}
+}
+
+func onEditGoal() {
+	goal := promptSelectGoal(nil)
+	goal = promptEditGoal(goal)
+
+	err := db.UpdateGoalNoProgress(goal)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("-- goal edited")
 }
 
 func promptSelectGoal(src *[]models.Goal) *models.Goal {
@@ -107,7 +151,7 @@ func promptEditGoal(goal *models.Goal) *models.Goal {
 		{
 			Name: "name",
 			Prompt: &survey.Input{
-				Message: "Event name:",
+				Message: "Goal name:",
 				Default: (*goal).Name,
 			},
 			Validate: func(val interface{}) error {
@@ -120,7 +164,7 @@ func promptEditGoal(goal *models.Goal) *models.Goal {
 		{
 			Name: "Date",
 			Prompt: &survey.Input{
-				Message: "Event date:",
+				Message: "Goal date:",
 				Default: (*goal).Date,
 			},
 			Validate: func(val interface{}) error {
@@ -134,7 +178,7 @@ func promptEditGoal(goal *models.Goal) *models.Goal {
 		{
 			Name: "Note",
 			Prompt: &survey.Input{
-				Message: "Event note:",
+				Message: "Goal note:",
 				Default: (*goal).Note,
 			},
 			Validate: func(val interface{}) error {
@@ -158,7 +202,6 @@ func promptEditGoal(goal *models.Goal) *models.Goal {
 	goal.Name, goal.Note = ans.Name, ans.Note
 	goal.Date, _ = models.ParseDate(ans.Date)
 
-	fmt.Println(goal)
 	return goal
 }
 
@@ -195,88 +238,111 @@ func createProgress(value int64, date, note string) *models.Progress {
 }
 
 func promptGoal() (name, date, note string) {
-	scanner := bufio.NewScanner(os.Stdin)
-	for {
-		fmt.Print("Name: ")
-		scanner.Scan()
-		name = scanner.Text()
-
-		if len(name) > 0 && len(name) <= 20 {
-			break
-		}
-		fmt.Fprintln(os.Stderr, "-- length constraint not respected")
+	qs := []*survey.Question{
+		{
+			Name: "name",
+			Prompt: &survey.Input{
+				Message: "Goal name:",
+			},
+			Validate: func(val interface{}) error {
+				if str, ok := val.(string); !ok || len(str) > 20 {
+					return errors.New("Lenght contraint not respected")
+				}
+				return nil
+			},
+		},
+		{
+			Name: "Date",
+			Prompt: &survey.Input{
+				Message: "Goal date:",
+			},
+			Validate: func(val interface{}) error {
+				str, ok := val.(string)
+				if _, err := models.ParseDate(str); !ok || err != nil {
+					return errors.New("Invalid date format")
+				}
+				return nil
+			},
+		},
+		{
+			Name: "Note",
+			Prompt: &survey.Input{
+				Message: "Goal note:",
+			},
+			Validate: func(val interface{}) error {
+				if str, ok := val.(string); !ok || len(str) > 50 {
+					return errors.New("Lenght contraint not respected")
+				}
+				return nil
+			},
+		},
 	}
 
-	for {
-		fmt.Print("Date (dd/mm/yyyy): ")
-		scanner.Scan()
-		date = scanner.Text()
+	ans := struct {
+		Name, Date, Note string
+	}{}
 
-		var err error
-		date, err = models.ParseDate(date)
-
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "-- invalid date ")
-		} else {
-			break
-		}
+	err := survey.Ask(qs, &ans)
+	if err != nil {
+		panic(err)
 	}
 
-	for {
-		fmt.Print("Note: ")
-		scanner.Scan()
-		note = scanner.Text()
-
-		if len(note) <= 50 {
-			break
-		}
-		fmt.Fprintln(os.Stderr, "-- length constraint not respected")
-	}
-	return
+	ans.Date, _ = models.ParseDate(ans.Date)
+	return ans.Name, ans.Date, ans.Note
 }
 
-func promptProgress() (value int64, date, note string) {
-	scanner := bufio.NewScanner(os.Stdin)
-	var err error
-	for {
-		fmt.Print("Value (0..100): ")
-		scanner.Scan()
-		value, err = strconv.ParseInt(scanner.Text(), 10, 64)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "-- invalid value")
-			continue
-		}
-		if value >= 0 && value <= 100 {
-			break
-		} else {
-			fmt.Fprintln(os.Stderr, "-- invalid value")
-		}
+func promptProgress() (int64, string, string) {
+	qs := []*survey.Question{
+		{
+			Name: "Value",
+			Prompt: &survey.Input{
+				Message: "Progress value (0..100):",
+			},
+			Validate: func(val interface{}) error {
+				str, ok := val.(string)
+				if val, err := strconv.ParseInt(str, 10, 64); !ok || err != nil || val < 0 || val > 100 {
+					return errors.New("invalid value")
+				}
+				return nil
+			},
+		},
+		{
+			Name: "Date",
+			Prompt: &survey.Input{
+				Message: "Progress date:",
+			},
+			Validate: func(val interface{}) error {
+				str, ok := val.(string)
+				if _, err := models.ParseDate(str); !ok || err != nil {
+					return errors.New("Invalid date format")
+				}
+				return nil
+			},
+		},
+		{
+			Name: "Note",
+			Prompt: &survey.Input{
+				Message: "Progress note:",
+			},
+			Validate: func(val interface{}) error {
+				if str, ok := val.(string); !ok || len(str) > 50 {
+					return errors.New("Lenght contraint not respected")
+				}
+				return nil
+			},
+		},
 	}
 
-	for {
-		fmt.Print("Date (dd/mm/yyyy): ")
-		scanner.Scan()
-		date = scanner.Text()
+	ans := struct {
+		Value      int64
+		Date, Note string
+	}{}
 
-		var err error
-		date, err = models.ParseDate(date)
-
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "-- invalid date ")
-		} else {
-			break
-		}
+	err := survey.Ask(qs, &ans)
+	if err != nil {
+		panic(err)
 	}
 
-	for {
-		fmt.Print("Note: ")
-		scanner.Scan()
-		note = scanner.Text()
-
-		if len(note) <= 50 {
-			break
-		}
-		fmt.Fprintln(os.Stderr, "-- length constraint not respected")
-	}
-	return
+	ans.Date, _ = models.ParseDate(ans.Date)
+	return ans.Value, ans.Date, ans.Note
 }
