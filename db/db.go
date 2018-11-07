@@ -30,49 +30,85 @@ func Disconnect() {
 }
 
 // InsertGoal inserts a new goal into local database
-func InsertGoal(goal *models.Goal) (int64, error) {
+// and updates goal fields like ID, and Progress[].ID
+func InsertGoal(goal *models.Goal) error {
 	// check if there's a connection to the database
 	if db == nil {
-		return 0, errors.New("No active connection to database")
+		return errors.New("No active connection to database")
 	}
 
-	// prepare statement
-	stmt, err := db.Prepare("INSERT INTO " + tableGoals + " (name, date, note) values (?,?,?)")
+	// begin transaction
+	tx, err := db.Begin()
 	if err != nil {
-		return 0, err
+		return err
 	}
 
-	// exec statement
-	res, err := stmt.Exec(goal.Name, goal.Date, goal.Note)
+	// insert goal into goals table
+	res, err := tx.Exec("INSERT INTO goal(name,date,note) VALUES(?,?,?)", goal.Name, goal.Date, goal.Note)
 	if err != nil {
-		return 0, err
+		tx.Rollback()
+		return err
 	}
 
-	id, err := res.LastInsertId()
-	return id, err
+	goal.ID, err = res.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	// check if goal has progresses
+	if len(goal.Progress) > 0 {
+
+		for i := range goal.Progress {
+			res, err = tx.Exec("INSERT INTO progress (goal_id, value, date, note) VALUES(?,?,?,?)",
+				goal.ID, goal.Progress[i].Value, goal.Progress[i].Date, goal.Progress[i].Note)
+
+			if err != nil {
+				return err
+			}
+
+			goal.Progress[i].ID, err = res.LastInsertId()
+			if err != nil {
+				return err
+			}
+
+		}
+	}
+
+	// commit transaction
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // InsertProgress inserts a new progress into local database
-func InsertProgress(p *models.Progress, goalID int64) (int64, error) {
+// and updates progress field ID to match the one in the database
+func InsertProgress(p *models.Progress, g *models.Goal) error {
 	// check if there's a connection to the database
 	if db == nil {
-		return 0, errors.New("No active connection to database")
+		return errors.New("No active connection to database")
 	}
 
 	// prepare statement
-	stmt, err := db.Prepare("INSERT INTO " + tableProgresses + " (goal_id, value, date, note) values (?,?,?,?)")
+	stmt, err := db.Prepare("INSERT INTO progress (goal_id, value, date, note) values (?,?,?,?)")
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	// exec statement
-	res, err := stmt.Exec(goalID, p.Value, p.Date, p.Note)
+	res, err := stmt.Exec(g.ID, p.Value, p.Date, p.Note)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
-	id, err := res.LastInsertId()
-	return id, err
+	// update progress id
+	p.ID, err = res.LastInsertId()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // FetchGoals fetches goals from local database
@@ -195,10 +231,8 @@ func FetchGoalsAndProgress() (*[]models.Goal, error) {
 	return &goals, nil
 }
 
-type generic interface{}
-
 // must is used to return only the first value
-func must(value generic, err error) generic {
+func must(value interface{}, err error) interface{} {
 	if err != nil {
 		panic(err)
 	}
