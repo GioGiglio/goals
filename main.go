@@ -52,7 +52,8 @@ func main() {
 		fmt.Println(v)
 	}
 
-	promptEditGoal(promptSelectGoal(nil))
+	goal := promptEditGoal(promptSelectGoal(nil))
+	db.UpdateGoalNoProgress(goal)
 	return
 
 	/*
@@ -101,7 +102,7 @@ func promptSelectGoal(src *[]models.Goal) *models.Goal {
 	return getGoal(goal)
 }
 
-func promptEditGoal(goal *models.Goal) {
+func promptEditGoal(goal *models.Goal) *models.Goal {
 	qs := []*survey.Question{
 		{
 			Name: "name",
@@ -158,6 +159,7 @@ func promptEditGoal(goal *models.Goal) {
 	goal.Date, _ = models.ParseDate(ans.Date)
 
 	fmt.Println(goal)
+	return goal
 }
 
 func getGoal(name string) *models.Goal {
