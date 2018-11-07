@@ -58,6 +58,8 @@ func main() {
 			flag.Usage()
 		}
 	}
+
+	onShowGoals()
 }
 
 func checkErr(err error) {
@@ -245,7 +247,7 @@ func promptGoal() (name, date, note string) {
 				Message: "Goal name:",
 			},
 			Validate: func(val interface{}) error {
-				if str, ok := val.(string); !ok || len(str) > 20 {
+				if str, ok := val.(string); !ok || len(str) > 20 || len(str) == 0 {
 					return errors.New("Lenght contraint not respected")
 				}
 				return nil
