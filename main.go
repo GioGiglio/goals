@@ -6,9 +6,12 @@ import (
 	"GOals/db"
 	"GOals/models"
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
+
+	"github.com/AlecAivazis/survey"
 )
 
 // global variables
@@ -16,6 +19,20 @@ var goals *[]models.Goal
 
 func init() {
 	// parse command line arguments
+	/*
+		parser := argparse.NewParser("GOals", "Personal goals register and tracker")
+
+		s := parser.List("a", "add", nil)
+
+		err := parser.Parse(os.Args)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, parser.Usage(err))
+		}
+
+		fmt.Println(*s)
+		os.Exit(0)
+	*/
+
 }
 
 func main() {
@@ -35,20 +52,24 @@ func main() {
 		fmt.Println(v)
 	}
 
+	editGoal(promptSelectGoal(nil))
 	return
 
-	//createGoal(promptGoal())
-
-	//goal := (*goals)[len(*goals)-1]
-	goal := (*goals)[0]
-	val, date, note := promptProgress()
-	createProgress(&goal, val, date, note)
+	/*
+		goal := createGoal(promptGoal())
+		goal.AddProgress(createProgress(promptProgress()))
+		goal.AddProgress(createProgress(promptProgress()))
+		db.InsertGoal(goal)
+	*/
 
 	/*
-		val, date, note = promptProgress()
-		createProgress(&goal, val, date, note)
+		goal := (*goals)[len((*goals))-1]
+		goal.AddProgress(createProgress(promptProgress()))
+
+		db.InsertProgress(&goal.Progress[len(goal.Progress)-1], &goal)
+
+		fmt.Println(goal)
 	*/
-	fmt.Println(goal)
 }
 
 func checkErr(err error) {
@@ -57,23 +78,102 @@ func checkErr(err error) {
 	}
 }
 
-func createGoal(name, date, note string) {
+func promptSelectGoal(matches *[]models.Goal) *models.Goal {
+	goal := ""
+	options := make([]string, 0, len(goal))
+
+	for _, v := range *goals {
+		options = append(options, v.Name)
+	}
+
+	prompt := &survey.Select{
+		Message: "Choose a goal:",
+		Options: options,
+	}
+	survey.AskOne(prompt, &goal, nil)
+
+	return getGoal(goal)
+}
+
+func editGoal(goal *models.Goal) {
+	qs := []*survey.Question{
+		{
+			Name: "name",
+			Prompt: &survey.Input{
+				Message: "Event name:",
+				Default: (*goal).Name,
+			},
+			Validate: func(val interface{}) error {
+				if str, ok := val.(string); !ok || len(str) > 20 {
+					return errors.New("Lenght contraint not respected")
+				}
+				return nil
+			},
+		},
+		{
+			Name: "Date",
+			Prompt: &survey.Input{
+				Message: "Event date:",
+				Default: (*goal).Date,
+			},
+			Validate: func(val interface{}) error {
+				str, ok := val.(string)
+				if _, err := models.ParseDate(str); !ok || err != nil {
+					return errors.New("Invalid date format")
+				}
+				return nil
+			},
+		},
+		{
+			Name: "Note",
+			Prompt: &survey.Input{
+				Message: "Event note:",
+				Default: (*goal).Note,
+			},
+			Validate: func(val interface{}) error {
+				if str, ok := val.(string); !ok || len(str) > 50 {
+					return errors.New("Lenght contraint not respected")
+				}
+				return nil
+			},
+		},
+	}
+
+	ans := struct {
+		Name, Date, Note string
+	}{}
+
+	err := survey.Ask(qs, &ans)
+	if err != nil {
+		panic(err)
+	}
+
+	goal.Name, goal.Date, goal.Note = ans.Name, ans.Date, ans.Note
+
+	fmt.Println(goal)
+}
+
+func getGoal(name string) *models.Goal {
+	for i := range *goals {
+		if (*goals)[i].Name == name {
+			return &(*goals)[i]
+		}
+	}
+	return nil
+}
+
+func createGoal(name, date, note string) *models.Goal {
 	// check length constraints
 	if len(name) > 20 || len(note) > 50 {
 		panic("Lenght contraints are not respected")
 	}
-	goal := *(models.CreateGoal(name, note))
+	goal := (models.CreateGoal(name, note))
 	err := goal.SetDate(date)
 	checkErr(err)
-
-	// insert goal into database
-	id, err := db.InsertGoal(&goal)
-	checkErr(err)
-	// assign id to goal
-	goal.ID = id
+	return goal
 }
 
-func createProgress(goal *models.Goal, value int64, date, note string) {
+func createProgress(value int64, date, note string) *models.Progress {
 	// check constraints
 	if value > 100 || len(note) > 50 {
 		panic("Lenght contraints are not respected")
@@ -82,13 +182,7 @@ func createProgress(goal *models.Goal, value int64, date, note string) {
 	progress := (models.CreateProgress(value, note))
 	err := progress.SetDate(date)
 	checkErr(err)
-
-	// add progress to goal
-	goal.AddProgress(progress)
-
-	// insert progress into db
-	progress.ID, err = db.InsertProgress(progress, goal.ID)
-	checkErr(err)
+	return progress
 }
 
 func promptGoal() (name, date, note string) {
