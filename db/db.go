@@ -29,7 +29,7 @@ func Disconnect() {
 	db.Close()
 }
 
-// InsertGoal inserts a new goal into local database
+// InsertGoal inserts a new goal and its progresses into local database
 // and updates goal fields like ID, and Progress[].ID
 func InsertGoal(goal *models.Goal) error {
 	// check if there's a connection to the database
@@ -155,34 +155,46 @@ func UpdateProgress(p *models.Progress) error {
 	return nil
 }
 
-// FetchGoals fetches goals from local database
-func FetchGoals() (*[]models.Goal, error) {
+// RemoveGoal removes a goal identified by the parameter goalID from the database.
+func RemoveGoal(goalID int64) error {
 	// check if there's a connection to the database
 	if db == nil {
-		return nil, errors.New("No active connection to database")
+		return errors.New("No active connection to database")
 	}
 
-	// exec query
-	rows, err := db.Query("SELECT * FROM " + tableGoals)
+	// prepare statement
+	stmt, err := db.Prepare("DELETE FROM goal WHERE id = ?")
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// parse goals
-	goals := make([]models.Goal, 0)
-	var id int64
-	var name, date, note string
-
-	for rows.Next() {
-		err = rows.Scan(&id, &name, &date, &note)
-		if err != nil {
-			return nil, err
-		}
-		goals = append(goals, models.Goal{
-			ID: id, Name: name, Date: date, Note: note, Progress: nil,
-		})
+	// exec statement
+	_, err = stmt.Exec(goalID)
+	if err != nil {
+		return err
 	}
-	return &goals, nil
+	return nil
+}
+
+// RemoveProgress removes a progress identified by progressID from the database.
+func RemoveProgress(progressID int64) error {
+	// check if there's a connection to the database
+	if db == nil {
+		return errors.New("No active connection to database")
+	}
+
+	// prepare statement
+	stmt, err := db.Prepare("DELETE FROM progress WHERE id = ?")
+	if err != nil {
+		return err
+	}
+
+	// exec statement
+	_, err = stmt.Exec(progressID)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // FetchGoalsAndProgress fetches all goals and progresses from local database
