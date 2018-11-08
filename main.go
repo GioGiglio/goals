@@ -46,6 +46,7 @@ func main() {
 		default:
 			flag.Usage()
 		}
+		return
 	}
 
 	if flagEdit != "" {
@@ -53,10 +54,11 @@ func main() {
 		case "goal":
 			onEditGoal()
 		case "progress":
-			fmt.Println("-- not implemented :(")
+			onEditProgress()
 		default:
 			flag.Usage()
 		}
+		return
 	}
 
 	onShowGoals()
@@ -120,9 +122,36 @@ func onEditGoal() {
 
 	err := db.UpdateGoalNoProgress(goal)
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 	}
 	fmt.Println("-- goal edited")
+}
+
+func onEditProgress() {
+	goal := promptSelectGoal(nil)
+
+	// prompt select progress
+	options := make([]string, 0, len(goal.Progress))
+	var selected string
+	for _, v := range goal.Progress {
+		options = append(options, v.String())
+	}
+
+	prompt := &survey.Select{
+		Message: "Choose a progress",
+		Options: options,
+	}
+
+	survey.AskOne(prompt, &selected, nil)
+
+	progress := &goal.Progress[prompt.SelectedIndex]
+	progress = promptEditProgress(progress)
+
+	err := db.UpdateProgress(progress)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("-- progress edited")
 }
 
 func promptSelectGoal(src *[]models.Goal) *models.Goal {
@@ -144,8 +173,7 @@ func promptSelectGoal(src *[]models.Goal) *models.Goal {
 		Options: options,
 	}
 	survey.AskOne(prompt, &goal, nil)
-
-	return getGoal(goal)
+	return &(*source)[prompt.SelectedIndex]
 }
 
 func promptEditGoal(goal *models.Goal) *models.Goal {
@@ -207,13 +235,66 @@ func promptEditGoal(goal *models.Goal) *models.Goal {
 	return goal
 }
 
-func getGoal(name string) *models.Goal {
-	for i := range *goals {
-		if (*goals)[i].Name == name {
-			return &(*goals)[i]
-		}
+func promptEditProgress(p *models.Progress) *models.Progress {
+	qs := []*survey.Question{
+		{
+			Name: "value",
+			Prompt: &survey.Input{
+				Message: "Progress value (0..100):",
+				Default: strconv.FormatInt(p.Value, 10),
+			},
+			Validate: func(val interface{}) error {
+				str, ok := val.(string)
+				if val, err := strconv.ParseInt(str, 10, 64); !ok || err != nil || val < 0 || val > 100 {
+					return errors.New("invalid value")
+				}
+				return nil
+			},
+		},
+		{
+			Name: "Date",
+			Prompt: &survey.Input{
+				Message: "Progress date:",
+				Default: (*p).Date,
+			},
+			Validate: func(val interface{}) error {
+				str, ok := val.(string)
+				if _, err := models.ParseDate(str); !ok || err != nil {
+					return errors.New("Invalid date format")
+				}
+				return nil
+			},
+		},
+		{
+			Name: "Note",
+			Prompt: &survey.Input{
+				Message: "Progress note:",
+				Default: (*p).Note,
+			},
+			Validate: func(val interface{}) error {
+				if str, ok := val.(string); !ok || len(str) > 50 {
+					return errors.New("Lenght contraint not respected")
+				}
+				return nil
+			},
+		},
 	}
-	return nil
+
+	ans := struct {
+		Value      int64
+		Date, Note string
+	}{}
+
+	err := survey.Ask(qs, &ans)
+	if err != nil {
+		panic(err)
+	}
+
+	ans.Date, _ = models.ParseDate(ans.Date)
+
+	p.Value, p.Date, p.Note = ans.Value, ans.Date, ans.Note
+
+	return p
 }
 
 func createGoal(name, date, note string) *models.Goal {
