@@ -162,14 +162,28 @@ func RemoveGoal(goalID int64) error {
 		return errors.New("No active connection to database")
 	}
 
-	// prepare statement
-	stmt, err := db.Prepare("DELETE FROM goal WHERE id = ?")
+	// begin transaction
+	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 
-	// exec statement
-	_, err = stmt.Exec(goalID)
+	// remove goal
+	_, err = tx.Exec("DELETE FROM goal WHERE id = ?", goalID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// remove goal's progresses
+	_, err = tx.Exec("DELETE FROM progress WHERE goal_id = ?", goalID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// commit transaction
+	err = tx.Commit()
 	if err != nil {
 		return err
 	}

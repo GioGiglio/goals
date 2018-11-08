@@ -10,19 +10,18 @@ import (
 	"github.com/AlecAivazis/survey"
 )
 
-// ShouldAddProgress asks the user wheter or not to add a new progress.
-// Note: This function gets invoked after user have inserted a new goal.
-func ShouldAddProgress() bool {
+// Confirm prompts the user to answer Yes or No to a particular question.
+func Confirm(question string) bool {
 	value := false
 	p := &survey.Confirm{
-		Message: "Add progress?",
+		Message: question,
 	}
 	survey.AskOne(p, &value, nil)
 	return value
 }
 
 // InsertGoal prompts the user to insert the fields of a new goal.
-func InsertGoal() (name, date, note string) {
+func InsertGoal(goals *[]models.Goal) (name, date, note string) {
 	qs := []*survey.Question{
 		{
 			Name: "name",
@@ -30,8 +29,14 @@ func InsertGoal() (name, date, note string) {
 				Message: "Goal name:",
 			},
 			Validate: func(val interface{}) error {
-				if str, ok := val.(string); !ok || len(str) > 20 || len(str) == 0 {
+				str, ok := val.(string)
+				if !ok || len(str) > 20 || len(str) == 0 {
 					return errors.New("Lenght contraint not respected")
+				}
+				for i := range *goals {
+					if (*goals)[i].Name == str {
+						return errors.New("goal " + str + " already exists")
+					}
 				}
 				return nil
 			},
@@ -77,7 +82,7 @@ func InsertGoal() (name, date, note string) {
 }
 
 // InsertProgress prompts the user to insert the fields of a new progress.
-func InsertProgress() (int64, string, string) {
+func InsertProgress(progresses *[]models.Progress) (int64, string, string) {
 	qs := []*survey.Question{
 		{
 			Name: "Value",
@@ -86,8 +91,14 @@ func InsertProgress() (int64, string, string) {
 			},
 			Validate: func(val interface{}) error {
 				str, ok := val.(string)
-				if val, err := strconv.ParseInt(str, 10, 64); !ok || err != nil || val < 0 || val > 100 {
+				value, err := strconv.ParseInt(str, 10, 64)
+				if !ok || err != nil || value < 0 || value > 100 {
 					return errors.New("invalid value")
+				}
+				for i := range *progresses {
+					if (*progresses)[i].Value == value {
+						return errors.New("progress with value " + str + "% already exists")
+					}
 				}
 				return nil
 			},
@@ -134,12 +145,12 @@ func InsertProgress() (int64, string, string) {
 }
 
 // SelectGoal prompts the user to select one of the goals
-// in source parameter
-func SelectGoal(source *[]models.Goal) *models.Goal {
+// in goals array parameter
+func SelectGoal(goals *[]models.Goal) *models.Goal {
 	goal := ""
 	options := make([]string, 0, len(goal))
 
-	for _, v := range *source {
+	for _, v := range *goals {
 		options = append(options, v.Name)
 	}
 
@@ -148,11 +159,7 @@ func SelectGoal(source *[]models.Goal) *models.Goal {
 		Options: options,
 	}
 	survey.AskOne(p, &goal, nil)
-
-	// TODO: remove
-	fmt.Println("-- prompt FilterMessage: ")
-
-	return &(*source)[p.SelectedIndex]
+	return getGoal(goals, goal)
 }
 
 // SelectProgress prompts the user to select one of the
@@ -171,7 +178,18 @@ func SelectProgress(goal *models.Goal) *models.Progress {
 
 	survey.AskOne(p, &selected, nil)
 
-	return &goal.Progress[p.SelectedIndex]
+	progressID := selected[1:3]
+	fmt.Println("--- ", progressID)
+	if progressID[1] == '%' {
+		progressID = progressID[:1]
+	}
+
+	progressIDInt, err := strconv.ParseInt(progressID, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+
+	return getProgress(&goal.Progress, progressIDInt)
 }
 
 // EditGoal prompts the user to re-insert goal fields
@@ -295,4 +313,22 @@ func EditProgress(p *models.Progress) *models.Progress {
 	p.Value, p.Date, p.Note = ans.Value, ans.Date, ans.Note
 
 	return p
+}
+
+func getGoal(goals *[]models.Goal, goalName string) *models.Goal {
+	for i := range *goals {
+		if (*goals)[i].Name == goalName {
+			return &(*goals)[i]
+		}
+	}
+	return nil
+}
+
+func getProgress(progresses *[]models.Progress, progressValue int64) *models.Progress {
+	for i := range *progresses {
+		if (*progresses)[i].Value == progressValue {
+			return &(*progresses)[i]
+		}
+	}
+	return nil
 }

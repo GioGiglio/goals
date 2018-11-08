@@ -23,6 +23,7 @@ type Goal struct {
 
 // Functions
 
+/*
 // CreateGoal creates a base Goal element
 func CreateGoal(name, note string) *Goal {
 	return &Goal{
@@ -43,6 +44,7 @@ func CreateProgress(value int64, note string) *Progress {
 		ID:    -1,
 	}
 }
+*/
 
 // ParseDate parses a date
 func ParseDate(date string) (string, error) {
