@@ -2,6 +2,7 @@
 package db
 
 import (
+	"GOals/goalsenv"
 	"GOals/models"
 	"database/sql"
 	"errors"
@@ -15,7 +16,7 @@ var tableGoals, tableProgresses string
 var dbPath string
 
 func init() {
-	dbPath = "./goals.db"
+	dbPath = goalsenv.GoalsPath + "goals.db"
 	tableGoals, tableProgresses = "goal", "progress"
 }
 
