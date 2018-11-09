@@ -4,20 +4,24 @@ package db
 import (
 	"database/sql"
 	"errors"
-	"goals/goalsenv"
+	"go/build"
 	"goals/models"
+	"os"
 
 	// This has to be imported in order to use the sqlite3 driver
 	_ "github.com/mattn/go-sqlite3"
 )
 
 var db *sql.DB
-var tableGoals, tableProgresses string
 var dbPath string
 
 func init() {
-	dbPath = goalsenv.GoalsPath + "goals.db"
-	tableGoals, tableProgresses = "goal", "progress"
+	// get GOPATH
+	goPath := os.Getenv("GOPATH")
+	if goPath == "" {
+		goPath = build.Default.GOPATH
+	}
+	dbPath = goPath + "/src/goals/goals.db"
 }
 
 // Connect connects to a local database using sqlite3 drives
