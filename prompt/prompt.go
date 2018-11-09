@@ -4,7 +4,6 @@ package prompt
 import (
 	"GOals/models"
 	"errors"
-	"fmt"
 	"strconv"
 
 	"github.com/AlecAivazis/survey"
@@ -179,7 +178,6 @@ func SelectProgress(goal *models.Goal) *models.Progress {
 	survey.AskOne(p, &selected, nil)
 
 	progressID := selected[1:3]
-	fmt.Println("--- ", progressID)
 	if progressID[1] == '%' {
 		progressID = progressID[:1]
 	}

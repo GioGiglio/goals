@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Structs
+/* STRUCTS */
 
 // Progress to a specific Goal
 type Progress struct {
@@ -21,30 +21,7 @@ type Goal struct {
 	Progress         []Progress
 }
 
-// Functions
-
-/*
-// CreateGoal creates a base Goal element
-func CreateGoal(name, note string) *Goal {
-	return &Goal{
-		Name:     name,
-		Note:     note,
-		Date:     "",
-		Progress: nil,
-		ID:       -1,
-	}
-}
-
-// CreateProgress creates a base Progress element
-func CreateProgress(value int64, note string) *Progress {
-	return &Progress{
-		Value: value,
-		Note:  note,
-		Date:  "",
-		ID:    -1,
-	}
-}
-*/
+/* FUNCTIONS */
 
 // ParseDate parses a date
 func ParseDate(date string) (string, error) {
@@ -61,7 +38,7 @@ func ParseDate(date string) (string, error) {
 	return date, nil
 }
 
-/* Methods */
+/* METHODS */
 
 // AddProgress adds a progress to a Goal
 func (g *Goal) AddProgress(progress *Progress) {
