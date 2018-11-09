@@ -1,3 +1,4 @@
+// Package models implements the basic structures used among the program.
 package models
 
 import (

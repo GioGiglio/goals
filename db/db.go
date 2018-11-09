@@ -1,3 +1,4 @@
+// Package db provides functions for accessing and talking to the goals db.
 package db
 
 import (
