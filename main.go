@@ -4,11 +4,11 @@ package main
 // TODO: Check for len(goals) before edit or remove operations
 
 import (
-	"GOals/db"
-	"GOals/models"
-	"GOals/prompt"
 	"flag"
 	"fmt"
+	"goals/db"
+	"goals/models"
+	"goals/prompt"
 )
 
 // global variables

@@ -2,8 +2,8 @@
 package prompt
 
 import (
-	"GOals/models"
 	"errors"
+	"goals/models"
 	"strconv"
 
 	"github.com/AlecAivazis/survey"

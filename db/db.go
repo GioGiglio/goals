@@ -2,10 +2,10 @@
 package db
 
 import (
-	"GOals/goalsenv"
-	"GOals/models"
 	"database/sql"
 	"errors"
+	"goals/goalsenv"
+	"goals/models"
 
 	// This has to be imported in order to use the sqlite3 driver
 	_ "github.com/mattn/go-sqlite3"

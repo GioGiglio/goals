@@ -17,5 +17,5 @@ func init() {
 	if GoPath == "" {
 		GoPath = build.Default.GOPATH
 	}
-	GoalsPath = GoPath + "/src/GOals/"
+	GoalsPath = GoPath + "/src/goals/"
 }
