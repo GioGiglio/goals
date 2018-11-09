@@ -97,6 +97,11 @@ func onAddGoal() {
 }
 
 func onAddProgress() {
+	if len((*goals)) == 0 {
+		fmt.Println("-- no goals")
+		return
+	}
+
 	goal := prompt.SelectGoal(goals)
 	progress := createProgress(prompt.InsertProgress(&goal.Progress))
 	goal.AddProgress(progress)
@@ -118,6 +123,11 @@ func onShowGoals() {
 }
 
 func onEditGoal() {
+	if len((*goals)) == 0 {
+		fmt.Println("-- no goals")
+		return
+	}
+
 	goal := prompt.SelectGoal(goals)
 	goal = prompt.EditGoal(goal)
 
@@ -128,6 +138,11 @@ func onEditGoal() {
 }
 
 func onEditProgress() {
+	if len((*goals)) == 0 {
+		fmt.Println("-- no goals")
+		return
+	}
+
 	goal := prompt.SelectGoal(goals)
 	progress := prompt.SelectProgress(goal)
 	progress = prompt.EditProgress(progress)
@@ -139,6 +154,11 @@ func onEditProgress() {
 }
 
 func onRemoveGoal() {
+	if len((*goals)) == 0 {
+		fmt.Println("-- no goals")
+		return
+	}
+
 	goal := prompt.SelectGoal(goals)
 	fmt.Println(goal)
 	if prompt.Confirm("Remove goal? (this action cannot be undone)") {
@@ -150,6 +170,11 @@ func onRemoveGoal() {
 }
 
 func onRemoveProgress() {
+	if len((*goals)) == 0 {
+		fmt.Println("-- no goals")
+		return
+	}
+
 	goal := prompt.SelectGoal(goals)
 
 	// check if goal has progresses
