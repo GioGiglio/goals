@@ -3,7 +3,6 @@ package db
 
 import (
 	"database/sql"
-	"errors"
 	"go/build"
 	"goals/models"
 	"os"
@@ -38,11 +37,6 @@ func Disconnect() {
 // InsertGoal inserts a new goal and its progresses into local database
 // and updates goal fields like ID, and Progress[].ID
 func InsertGoal(goal *models.Goal) error {
-	// check if there's a connection to the database
-	if db == nil {
-		return errors.New("No active connection to database")
-	}
-
 	// begin transaction
 	tx, err := db.Begin()
 	if err != nil {
@@ -92,11 +86,6 @@ func InsertGoal(goal *models.Goal) error {
 // InsertProgress inserts a new progress into local database
 // and updates progress field ID to match the one in the database
 func InsertProgress(p *models.Progress, g *models.Goal) error {
-	// check if there's a connection to the database
-	if db == nil {
-		return errors.New("No active connection to database")
-	}
-
 	// prepare statement
 	stmt, err := db.Prepare("INSERT INTO progress (goal_id, value, date, note) values (?,?,?,?)")
 	if err != nil {
@@ -120,11 +109,6 @@ func InsertProgress(p *models.Progress, g *models.Goal) error {
 // UpdateGoalNoProgress updates goal info in the database
 // without modifying any of its progresses
 func UpdateGoalNoProgress(g *models.Goal) error {
-	// check if there's a connection to the database
-	if db == nil {
-		return errors.New("No active connection to database")
-	}
-
 	// prepare statement
 	stmt, err := db.Prepare("UPDATE goal SET name = ?, date = ?, note = ? WHERE id = ?")
 	if err != nil {
@@ -141,11 +125,6 @@ func UpdateGoalNoProgress(g *models.Goal) error {
 
 // UpdateProgress Updates progress info into the database
 func UpdateProgress(p *models.Progress) error {
-	// check if there's a connection to the database
-	if db == nil {
-		return errors.New("No active connection to database")
-	}
-
 	// prepare statement
 	stmt, err := db.Prepare("UPDATE progress SET value = ?, date = ?, note = ? WHERE id = ?")
 	if err != nil {
@@ -163,11 +142,6 @@ func UpdateProgress(p *models.Progress) error {
 
 // RemoveGoal removes a goal identified by the parameter goalID from the database.
 func RemoveGoal(goalID int64) error {
-	// check if there's a connection to the database
-	if db == nil {
-		return errors.New("No active connection to database")
-	}
-
 	// begin transaction
 	tx, err := db.Begin()
 	if err != nil {
@@ -198,11 +172,6 @@ func RemoveGoal(goalID int64) error {
 
 // RemoveProgress removes a progress identified by progressID from the database.
 func RemoveProgress(progressID int64) error {
-	// check if there's a connection to the database
-	if db == nil {
-		return errors.New("No active connection to database")
-	}
-
 	// prepare statement
 	stmt, err := db.Prepare("DELETE FROM progress WHERE id = ?")
 	if err != nil {
@@ -219,11 +188,6 @@ func RemoveProgress(progressID int64) error {
 
 // FetchGoalsAndProgress fetches all goals and progresses from local database
 func FetchGoalsAndProgress() (*[]models.Goal, error) {
-	// check if there's a connection to the database
-	if db == nil {
-		return nil, errors.New("No active connection to database")
-	}
-
 	// exec query
 	rows, err := db.Query("SELECT g.*, p.id, p.value, p.date, p.note FROM goal as g LEFT JOIN progress as p ON g.id = p.goal_id;")
 	if err != nil {
