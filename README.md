@@ -8,7 +8,7 @@ Simple but powerful, written in __Go__.
 ## Installation
 ```
 go get github.com/giogiglio/goals
-go install goals
+go install github.com/giogiglio/goals
 ```
 
 Make sure to have `$GOPATH/bin` in your `$PATH` so that you can execute `goals` from everywhere in your terminal.
