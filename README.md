@@ -8,6 +8,7 @@ Simple but powerful, written in __Go__.
 ## Installation
 ```
 go get github.com/giogiglio/goals
+cd $GOPATH/src
 go install github.com/giogiglio/goals
 ```
 
