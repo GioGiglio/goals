@@ -3,6 +3,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"go/build"
 	"goals/models"
 	"os"
@@ -21,6 +22,8 @@ func init() {
 		goPath = build.Default.GOPATH
 	}
 	dbPath = goPath + "/src/goals/goals.db"
+
+	createDBIfNotExists()
 }
 
 // Connect connects to a local database using sqlite3 drives
@@ -290,4 +293,57 @@ func must(value interface{}, err error) interface{} {
 		return v.(string)
 	}
 
+}
+
+func initDB() {
+	goalSchema := `
+	CREATE TABLE goal ( 
+		id   INTEGER NOT NULL,
+		name VARCHAR(20) NOT NULL, 
+		date VARCHAR(10) NOT NULL, 
+		note VARCHAR(50), 
+		PRIMARY KEY (id) 
+	);`
+
+	progressSchema := `
+	CREATE TABLE progress ( 
+		id      INTEGER NOT NULL, 
+		goal_id INTEGER NOT NULL, 
+		value   INTEGER NOT NULL, 
+		date    VARCHAR(10) NOT NULL, 
+		note    VARCHAR(50), 
+		CHECK (value >=0 AND value <=100), 
+		PRIMARY KEY (id), 
+		FOREIGN KEY (goal_id) REFERENCES goal(id) 
+	);`
+
+	_, err := db.Exec(goalSchema)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = db.Exec(progressSchema)
+	if err != nil {
+		panic(err)
+	}
+
+}
+
+// creates and inits the db if it does not exist.
+func createDBIfNotExists() {
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		// db file does not exist, create it.
+		fmt.Println("-- db file does not exist, creating it...")
+		_, err := os.Create(dbPath)
+		if err != nil {
+			panic(err)
+		}
+
+		// connect to db and create tables
+		fmt.Println("-- initializing db...")
+		Connect()
+		initDB()
+		Disconnect()
+		fmt.Println("-- all done")
+	}
 }
