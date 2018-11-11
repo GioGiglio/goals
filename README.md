@@ -15,9 +15,9 @@ go install github.com/giogiglio/goals
 Make sure to have `$GOPATH/bin` in your `$PATH` so that you can execute `goals` from everywhere in your terminal.
 
 ### Dependencies
-These modules are required.
+These modules are required in order to run this program.
 - [go-sqlite3](https://github.com/mattn/go-sqlite3) sqlite3 driver for Go.
-- [Survey](https://github.com/AlecAivazis/survey) for interactive prompts.
+- [Survey](https://github.com/AlecAivazis/survey) for interactive prompts. 
 
 ## Usage
 ```
