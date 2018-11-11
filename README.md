@@ -22,11 +22,22 @@ These modules are required.
 ## Usage
 ```
 goals [ [-new | -edit | -remove] goal | progress ] [ -help ]
+
+goals -new [ goal | progress ]
+  Lets you create a new goal, or a new progress for an exisisting goal.
+  
+goals -edit [ goal | progress ]
+  Lets you modify an existing goal or a progress.
+  
+goals -remove [ goal | progress ]
+  Lets you remove an existing goal or progress.
+  
+goals -help
+  Prints an help message.
 ```
 
 ### Constraints:
-- Goals names must be unique and must not exceed 20 characters.
-- Goals date format is `dd/mm/yyyy`. You can also use `today` and `yesterday`.
-- Goals notes can be empty and can't exceed 50 characters.
-- Progresses value must be a number between 0 and 100 included.
-- As for goals notes, the same applies to progresses ones.
+- Goal name must be unique and must not exceed 20 characters.
+- Goal and progress date format is `dd/mm/yyyy`. You can also use `today` and `yesterday`.
+- Goal and progress note can be empty and can't exceed 50 characters.
+- Progress value must be a number between 0 and 100, both included.
