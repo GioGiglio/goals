@@ -38,6 +38,6 @@ goals -help
 
 ### Constraints:
 - Goal name must be unique and must not exceed 20 characters.
-- Goal and progress date format is `dd/mm/yyyy`. You can also use `today` and `yesterday`.
+- Goal and progress date format is `dd/mm/yyyy`. You can also use `today` and `yesterday` wildcards.
 - Goal and progress note can be empty and can't exceed 50 characters.
 - Progress value must be a number between 0 and 100, both included.
