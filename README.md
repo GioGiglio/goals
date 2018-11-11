@@ -3,7 +3,7 @@ Your personal goals register and tracker.
 
 Simple but powerful, written in __Go__.
 
-![Creating a new goal ](https://image.ibb.co/n9VGaA/ezgif-com-gif-maker-1.gif)
+![Creating a new goal ](https://image.ibb.co/gHFKVA/ezgif-com-gif-maker-2.gif)
 
 ## Installation
 ```
