@@ -1,4 +1,5 @@
-# Goals
+# 🎯 Goals
+
 Your personal goals register and tracker.
 
 Simple but powerful, written in __Go__.
