@@ -18,6 +18,10 @@ func init() {
 	// connect to local database
 	err := db.Connect()
 	checkErr(err)
+
+	// fetch goals
+	goals, err = db.FetchGoalsAndProgress()
+	checkErr(err)
 }
 
 func main() {
@@ -28,7 +32,6 @@ func main() {
 	var flagNew string
 	var flagEdit string
 	var flagRemove string
-	var err error
 
 	flag.StringVar(&flagNew, "new", "", "Add a new [goal | progress]")
 	flag.StringVar(&flagEdit, "edit", "", "Edit an existing [goal | progress]")
@@ -46,10 +49,6 @@ func main() {
 		}
 		return
 	}
-
-	// fetch goals before editing or removing
-	goals, err = db.FetchGoalsAndProgress()
-	checkErr(err)
 
 	if flagEdit != "" {
 		switch flagEdit {
