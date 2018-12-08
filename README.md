@@ -22,7 +22,7 @@ These modules are required in order to run this program.
 
 ## Usage
 ```
-goals [ [-new | -edit | -remove] goal | progress ] [ -help ]
+goals [-new | -edit | -remove] [goal | progress] | [ -help ]
 
 goals -new [ goal | progress ]
   Lets you create a new goal, or a new progress for an exisisting goal.
